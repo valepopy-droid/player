@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Player</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: transparent;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    font-family: 'Montserrat', sans-serif;
+  }
+
+  .player {
+    background: #d6d6d6;
+    border-radius: 16px;
+    padding: 16px 22px;
+    width: 320px;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.13);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  /* Progress bar */
+  .progress-wrap {
+    position: relative;
+    height: 3px;
+    background: #b0b0b0;
+    border-radius: 2px;
+    cursor: pointer;
+  }
+
+  .progress-bar {
+    height: 100%;
+    background: #5a5a5a;
+    border-radius: 2px;
+    width: 0%;
+    transition: width 0.1s linear;
+  }
+
+  .progress-thumb {
+    position: absolute;
+    top: 50%;
+    left: 0%;
+    transform: translate(-50%, -50%);
+    width: 10px;
+    height: 10px;
+    background: #3a3a3a;
+    border-radius: 50%;
+    transition: left 0.1s linear;
+  }
+
+  /* Time */
+  .time-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 9px;
+    color: #7a7a7a;
+    letter-spacing: 0.5px;
+    margin-top: -4px;
+  }
+
+  /* Controls + volume in one row */
+  .bottom-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+  }
+
+  .btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #4a4a4a;
+    transition: color 0.2s, transform 0.15s;
+    padding: 4px;
+  }
+
+  .btn:hover { color: #1a1a1a; transform: scale(1.1); }
+  .btn:active { transform: scale(0.95); }
+
+  .btn-play {
+    width: 44px;
+    height: 44px;
+    background: #5a5a5a;
+    border-radius: 50%;
+    color: #e8e8e8;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.18);
+    transition: background 0.2s, transform 0.15s;
+  }
+
+  .btn-play:hover { background: #3a3a3a; color: #fff; transform: scale(1.07); }
+
+  /* Volume compact */
+  .volume-compact {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    margin-left: 4px;
+  }
+
+  .volume-track-small {
+    width: 52px;
+    height: 3px;
+    background: #b0b0b0;
+    border-radius: 2px;
+    cursor: pointer;
+    position: relative;
+  }
+
+  .volume-fill {
+    height: 100%;
+    background: #5a5a5a;
+    border-radius: 2px;
+    width: 80%;
+  }
+
+  svg { display: block; }
+</style>
+</head>
+<body>
+
+<div class="player">
+  <div class="progress-wrap" id="progressWrap">
+    <div class="progress-bar" id="progressBar"></div>
+    <div class="progress-thumb" id="progressThumb"></div>
+  </div>
+  <div class="time-row">
+    <span id="currentTime">0:00</span>
+    <span id="duration">0:00</span>
+  </div>
+
+  <div class="bottom-row">
+    <!-- Rewind -->
+    <button class="btn" id="btnRewind">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z"/>
+      </svg>
+    </button>
+
+    <!-- Play/Pause -->
+    <button class="btn btn-play" id="btnPlay">
+      <svg id="iconPlay" width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M8 5v14l11-7z"/>
+      </svg>
+      <svg id="iconPause" width="20" height="20" viewBox="0 0 24 24" fill="currentColor" style="display:none">
+        <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>
+      </svg>
+    </button>
+
+    <!-- Forward -->
+    <button class="btn" id="btnForward">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M12 5V1l5 5-5 5V7c-3.31 0-6 2.69-6 6s2.69 6 6 6 6-2.69 6-6h2c0 4.42-3.58 8-8 8s-8-3.58-8-8 3.58-8 8-8z"/>
+      </svg>
+    </button>
+
+    <!-- Volume compact -->
+    <div class="volume-compact">
+      <button class="btn" id="btnMute" style="padding:0">
+        <svg id="iconVol" width="16" height="16" viewBox="0 0 24 24" fill="#4a4a4a">
+          <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/>
+        </svg>
+        <svg id="iconMute" width="16" height="16" viewBox="0 0 24 24" fill="#4a4a4a" style="display:none">
+          <path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/>
+        </svg>
+      </button>
+      <div class="volume-track-small" id="volumeTrack">
+        <div class="volume-fill" id="volumeFill"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<audio id="audio" preload="auto" crossorigin="anonymous">
+  <source src="love it.mp3" type="audio/mpeg">
+</audio>
+
+<script>
+  const audio = document.getElementById('audio');
+  const btnPlay = document.getElementById('btnPlay');
+  const iconPlay = document.getElementById('iconPlay');
+  const iconPause = document.getElementById('iconPause');
+  const progressBar = document.getElementById('progressBar');
+  const progressThumb = document.getElementById('progressThumb');
+  const progressWrap = document.getElementById('progressWrap');
+  const currentTimeEl = document.getElementById('currentTime');
+  const durationEl = document.getElementById('duration');
+  const btnRewind = document.getElementById('btnRewind');
+  const btnForward = document.getElementById('btnForward');
+  const btnMute = document.getElementById('btnMute');
+  const iconVol = document.getElementById('iconVol');
+  const iconMute = document.getElementById('iconMute');
+  const volumeTrack = document.getElementById('volumeTrack');
+  const volumeFill = document.getElementById('volumeFill');
+
+  audio.volume = 0.8;
+
+  function fmt(s) {
+    const m = Math.floor(s / 60);
+    const sec = Math.floor(s % 60);
+    return m + ':' + (sec < 10 ? '0' : '') + sec;
+  }
+
+  btnPlay.addEventListener('click', () => {
+    if (audio.paused) {
+      audio.play();
+      iconPlay.style.display = 'none';
+      iconPause.style.display = 'block';
+    } else {
+      audio.pause();
+      iconPlay.style.display = 'block';
+      iconPause.style.display = 'none';
+    }
+  });
+
+  audio.addEventListener('timeupdate', () => {
+    if (!audio.duration) return;
+    const pct = (audio.currentTime / audio.duration) * 100;
+    progressBar.style.width = pct + '%';
+    progressThumb.style.left = pct + '%';
+    currentTimeEl.textContent = fmt(audio.currentTime);
+  });
+
+  audio.addEventListener('loadedmetadata', () => {
+    durationEl.textContent = fmt(audio.duration);
+  });
+
+  audio.addEventListener('ended', () => {
+    iconPlay.style.display = 'block';
+    iconPause.style.display = 'none';
+    progressBar.style.width = '0%';
+    progressThumb.style.left = '0%';
+    currentTimeEl.textContent = '0:00';
+  });
+
+  progressWrap.addEventListener('click', (e) => {
+    const rect = progressWrap.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const pct = x / rect.width;
+    audio.currentTime = pct * audio.duration;
+  });
+
+  btnRewind.addEventListener('click', () => { audio.currentTime = Math.max(0, audio.currentTime - 10); });
+  btnForward.addEventListener('click', () => { audio.currentTime = Math.min(audio.duration, audio.currentTime + 10); });
+
+  btnMute.addEventListener('click', () => {
+    audio.muted = !audio.muted;
+    iconVol.style.display = audio.muted ? 'none' : 'block';
+    iconMute.style.display = audio.muted ? 'block' : 'none';
+  });
+
+  volumeTrack.addEventListener('click', (e) => {
+    const rect = volumeTrack.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const pct = Math.max(0, Math.min(1, x / rect.width));
+    audio.volume = pct;
+    volumeFill.style.width = (pct * 100) + '%';
+  });
+</script>
+</body>
+</html>
